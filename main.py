@@ -264,9 +264,15 @@ async def stats(interaction: discord.Interaction,
         if user_id not in data:
             data[user_id] = {"problems_solved": 0, "last_active": "Never"}
 
-        # Ensure "rank" key exists
-        if "rank" not in data[user_id]:
-            data[user_id]["rank"] = 0
+        # Dynamically calculate the user's rank
+        sorted_users = sorted(data.items(),
+                              key=lambda x: x[1].get("problems_solved", 0),
+                              reverse=True)
+        user_ids = [uid for uid, _ in sorted_users]
+        try:
+            rank = user_ids.index(user_id) + 1
+        except ValueError:
+            rank = len(user_ids) + 1  # Handle if user not found
 
         last_active = datetime.datetime.fromisoformat(data[user_id]["last_active"]) \
             if data[user_id]["last_active"] != "Never" else "Never"
@@ -279,7 +285,7 @@ async def stats(interaction: discord.Interaction,
                         value=f"```{data[user_id]['problems_solved']}```",
                         inline=True)
         embed.add_field(name="Leaderboard Rank",
-                        value=f"```{data[user_id]['rank']}```",
+                        value=f"```{rank}```",
                         inline=True)
         embed.add_field(
             name="Last Active",
@@ -289,7 +295,7 @@ async def stats(interaction: discord.Interaction,
         embed.add_field(
             name="Activity Level",
             value=
-            f"```{'🔥 Active' if data[user_id]['last_active'] != 'Never' else '❄️ Inactive'}```",
+            f"```{'🔥 Active' if data[user_id]['last_active'] != 'Never' and not isinstance(last_active, str) else '❄️ Inactive'}```",
             inline=True)
 
         await interaction.response.send_message(embed=embed)
