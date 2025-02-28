@@ -9,25 +9,20 @@ from collections import defaultdict
 from typing import Optional
 import datetime
 
-# Get token from environment variables
 TOKEN = os.getenv("TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID"))
 
-# Ensure token is provided
 if not TOKEN:
     raise ValueError("Bot token is missing! Set it in Replit's Secrets.")
 
-# Enable required intents
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 intents.guilds = True
-intents.members = True  # Enable server members intent
+intents.members = True
 
-# Initialize bot
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Load data from JSON file
 DATA_FILE = "data.json"
 
 
@@ -46,7 +41,6 @@ def save_data(data):
 data = load_data()
 
 
-#embeded message
 def create_embed(title, description="", color=0x00ff00):
     embed = discord.Embed(title=title,
                           description=description,
@@ -55,9 +49,8 @@ def create_embed(title, description="", color=0x00ff00):
     return embed
 
 
-# Leaderboard dictionary to track solved problems
 leaderboard = defaultdict(int)
-# Last activity dictionary to track user activity time
+
 last_activity = {}
 
 
@@ -69,7 +62,7 @@ async def on_ready():
     except Exception as e:
         print(f"Error syncing commands: {e}")
     print(f'Logged in as {bot.user}')
-    if not auto_roast.is_running():  # Check if task isn't already running
+    if not auto_roast.is_running():
         auto_roast.start()
 
 
@@ -80,15 +73,13 @@ async def on_message(message):
 
     user_id = str(message.author.id)
 
-    # Ensure user is in data.json
     if user_id not in data:
         data[user_id] = {"problems_solved": 0, "last_active": "Never"}
 
-    # Check if message contains a code block
     if re.search(r"```(.|\n)*```", message.content):
         data[user_id]["problems_solved"] += 1
         data[user_id]["last_active"] = datetime.datetime.utcnow().isoformat()
-        save_data(data)  # Save updated data to file
+        save_data(data)
 
         if message.author.id == OWNER_ID:
             await message.reply("Chai peene aa jaiye bhot coding ho gyi ☕")
@@ -206,23 +197,18 @@ async def motivate(interaction: discord.Interaction, member: discord.Member):
             }
         ]
 
-        # Select random motivation
         motivation = random.choice(motivations)
 
-        # Create personalized embed
         embed = discord.Embed(title=motivation["title"],
                               description=motivation["message"],
                               color=motivation["color"],
                               timestamp=datetime.datetime.utcnow())
 
-        # Set thumbnail to the mentioned user's profile photo
         embed.set_thumbnail(url=member.avatar.url if member.avatar else member.
                             default_avatar.url)
 
-        # Set the GIF for the embed
         embed.set_image(url=motivation["gif"])
 
-        # Set footer with family message
         embed.set_footer(
             text="Parivaar hamesha aapke saath ❤️",
             icon_url=interaction.user.avatar.url if interaction.user.avatar
@@ -299,6 +285,56 @@ async def stats(interaction: discord.Interaction,
             inline=True)
 
         await interaction.response.send_message(embed=embed)
+
+
+@bot.tree.command(name="modify_solves",
+                  description="[ADMIN] Adjust a user's solved problems count")
+@commands.has_permissions(administrator=True)
+async def modify_solves(interaction: discord.Interaction,
+                        member: discord.Member, amount: int):
+    """Admin command to modify problem solve count for a user"""
+    if amount == 0:
+        await interaction.response.send_message("Amount cannot be zero!",
+                                                ephemeral=True)
+        return
+
+    user_id = str(member.id)
+
+    # Initialize user if not in data
+    if user_id not in data:
+        data[user_id] = {"problems_solved": 0, "last_active": "Never"}
+
+    original_count = data[user_id]["problems_solved"]
+    data[user_id]["problems_solved"] = max(
+        0, data[user_id]["problems_solved"] + amount)
+    save_data(data)
+
+    embed = create_embed("🔧 Admin Action - Solve Count Modified",
+                         f"Updated {member.mention}'s problem solves:",
+                         0x7289da)
+    embed.add_field(name="Previous Count",
+                    value=str(original_count),
+                    inline=True)
+    embed.add_field(name="Adjustment",
+                    value=f"{'+' if amount > 0 else ''}{amount}",
+                    inline=True)
+    embed.add_field(name="New Count",
+                    value=str(data[user_id]["problems_solved"]),
+                    inline=True)
+    embed.set_footer(
+        text=f"Action performed by {interaction.user.display_name}")
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+@modify_solves.error
+async def modify_solves_error(interaction: discord.Interaction, error):
+    if isinstance(error, commands.MissingPermissions):
+        await interaction.response.send_message(
+            "❌ You don't have permission to use this command!", ephemeral=True)
+    else:
+        await interaction.response.send_message(
+            f"An error occurred: {str(error)}", ephemeral=True)
 
 
 # Run the bot
