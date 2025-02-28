@@ -152,6 +152,29 @@ async def motivate(interaction: discord.Interaction, member: discord.Member):
 
 
 
+@bot.tree.command(name="leaderboard",
+                  description="Shows the coding leaderboard")
+async def leaderboard(interaction: discord.Interaction):
+    async with interaction.channel.typing():
+        sorted_users = sorted(data.items(),
+                              key=lambda x: x[1].get("problems_solved", 0),
+                              reverse=True)[:10]
+
+        embed = create_embed("🏆 Coding Leaderboard 🏆",
+                             "Top problem solvers in the community:",
+                             0xffd700)
+
+        for rank, (user_id, stats) in enumerate(sorted_users, 1):
+            user = await bot.fetch_user(int(user_id))
+            embed.add_field(
+                name=f"{rank}. {user.display_name}",
+                value=
+                f"**Solved:** {stats['problems_solved']} | **Last Active:** {stats['last_active'][:10]}",
+                inline=False)
+
+        await interaction.response.send_message(embed=embed)
+
+
 @bot.tree.command(name="stats",
                   description="Shows your coding progress and activity stats")
 async def stats(interaction: discord.Interaction):
