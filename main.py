@@ -171,30 +171,45 @@ async def leaderboard(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="stats",
-                  description="Shows your coding progress and activity stats")
-async def stats(interaction: discord.Interaction):
-    user_id = str(interaction.user.id)
+                  description="Check coding stats for yourself or others")
+async def stats(interaction: discord.Interaction,
+                member: Optional[discord.Member] = None):
+    async with interaction.channel.typing():
+        target = member or interaction.user
+        user_id = str(target.id)
 
-    # Ensure user data exists
-    if user_id not in data:
-        data[user_id] = {
-            "problems_solved": 0,
-            "rank": 0,
-            "last_active": "Never"
-        }
+        if user_id not in data:
+            data[user_id] = {"problems_solved": 0, "last_active": "Never"}
 
-    # Ensure "rank" key exists
-    if "rank" not in data[user_id]:
-        data[user_id]["rank"] = 0
+        # Ensure "rank" key exists
+        if "rank" not in data[user_id]:
+            data[user_id]["rank"] = 0
 
-    stats_message = (
-        f"**📊 Your Coding Stats:**\n"
-        f"👤 **User:** {interaction.user.display_name}\n"
-        f"✅ **Problems Solved:** {data[user_id]['problems_solved']}\n"
-        f"🏆 **Leaderboard Rank:** {data[user_id]['rank']}\n"
-        f"🕒 **Last Active:** {data[user_id]['last_active']}\n")
+        last_active = datetime.datetime.fromisoformat(data[user_id]["last_active"]) \
+            if data[user_id]["last_active"] != "Never" else "Never"
 
-    await interaction.response.send_message(stats_message)
+        embed = create_embed(f"📊 {target.display_name}'s Coding Stats",
+                             color=0x7289da)
+        embed.set_thumbnail(url=target.avatar.url if target.avatar else target.default_avatar.url)
+        embed.add_field(name="Problems Solved",
+                        value=f"```{data[user_id]['problems_solved']}```",
+                        inline=True)
+        embed.add_field(
+            name="Leaderboard Rank",
+            value=f"```{data[user_id]['rank']}```",
+            inline=True)
+        embed.add_field(
+            name="Last Active",
+            value=
+            f"```{last_active if isinstance(last_active, str) else last_active.strftime('%Y-%m-%d %H:%M')}```",
+            inline=True)
+        embed.add_field(
+            name="Activity Level",
+            value=
+            f"```{'🔥 Active' if data[user_id]['last_active'] != 'Never' else '❄️ Inactive'}```",
+            inline=True)
+
+        await interaction.response.send_message(embed=embed)
 
 
 # Run the bot
