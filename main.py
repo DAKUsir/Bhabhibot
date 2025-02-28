@@ -22,6 +22,7 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 intents.guilds = True
+intents.members = True  # Enable server members intent
 
 # Initialize bot
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -43,6 +44,7 @@ def save_data(data):
 
 
 data = load_data()
+
 
 #embeded message
 def create_embed(title, description="", color=0x00ff00):
@@ -67,7 +69,9 @@ async def on_ready():
     except Exception as e:
         print(f"Error syncing commands: {e}")
     print(f'Logged in as {bot.user}')
-    auto_roast.start()
+    if not auto_roast.is_running():  # Check if task isn't already running
+        auto_roast.start()
+
 
 @bot.event
 async def on_message(message):
@@ -96,7 +100,6 @@ async def on_message(message):
 
 @tasks.loop(hours=24)
 async def auto_roast():
-    """Checks inactive users and roasts them."""
     current_time = datetime.datetime.utcnow()
 
     for guild in bot.guilds:
@@ -105,23 +108,31 @@ async def auto_roast():
                 continue
 
             user_id = str(member.id)
-            last_active_str = data.get(user_id, {}).get("last_active", "Never")
+            user_data = data.get(user_id, {})
+            last_active_str = user_data.get("last_active", "Never")
 
             if last_active_str == "Never":
                 last_active = None
             else:
-                last_active = datetime.datetime.fromisoformat(last_active_str.split("+")[0])
+                last_active = datetime.datetime.fromisoformat(
+                    last_active_str.split("+")[0])
 
-            if last_active and (current_time - last_active).total_seconds() > 86400:  # 24 hours
+            if last_active and (current_time -
+                                last_active).total_seconds() > 86400:
                 channel = guild.system_channel or next(
-                    (ch for ch in guild.text_channels if ch.permissions_for(guild.me).send_messages),
-                    None
-                )
+                    (ch for ch in guild.text_channels
+                     if ch.permissions_for(guild.me).send_messages), None)
                 if channel:
-                    await channel.send(
-                        f"{member.mention} Arre bhai, coding bhool gaye kya? Ya sirf Discord me timepass chal raha hai? 😏🔥"
-                    )
-
+                    try:
+                        await channel.send(
+                            f"{member.mention} Arre bhai, coding bhool gaye kya? Ya sirf Discord me timepass chal raha hai? 😏🔥"
+                        )
+                    except discord.Forbidden:
+                        print(
+                            f"Missing permissions to send message in {channel.name}"
+                        )
+                    except Exception as e:
+                        print(f"Error sending roast: {e}")
 
 
 @bot.tree.command(name="send", description="Send a message to a channel")
@@ -144,11 +155,9 @@ async def help_command(interaction: discord.Interaction):
     await interaction.response.send_message(help_text)
 
 
-@bot.tree.command(
-    name="motivate",
-    description="Bhaiyon ko coding ke liye protsaahit karein")
-async def motivate(interaction: discord.Interaction,
-                   member: discord.Member):
+@bot.tree.command(name="motivate",
+                  description="Bhaiyon ko coding ke liye protsaahit karein")
+async def motivate(interaction: discord.Interaction, member: discord.Member):
     async with interaction.channel.typing():
         motivations = [
             {
@@ -164,20 +173,16 @@ async def motivate(interaction: discord.Interaction,
             {
                 "message":
                 f"{member.mention} bhai, keyboard toh jal raha hai tumhare haathon se! 🔥\nChhote bhaiyon ko seekhane ka time aa gaya!",
-                "color":
-                0xFF4500,  # OrangeRed
-                "title":
-                "Bhabhi ki Taakat 💻",
+                "color": 0xFF4500,  # OrangeRed
+                "title": "Bhabhi ki Taakat 💻",
                 "gif":
                 "https://media.giphy.com/media/LmNwrBhejkK9EFP504/giphy.gif"  # Fiery typing
             },
             {
                 "message":
                 f"{member.mention} ka to X-FACTOR dikh gaya! 🧠\nAb ghar ka genius kaun kehta hai?",
-                "color":
-                0x00FF00,  # Lime
-                "title":
-                "Family Genius 🤓",
+                "color": 0x00FF00,  # Lime
+                "title": "Family Genius 🤓",
                 "gif":
                 "https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif"  # Brain sparkles
             },
@@ -194,10 +199,8 @@ async def motivate(interaction: discord.Interaction,
             {
                 "message":
                 f"{member.mention} coffee piyo, code likho ☕\nRaat bhar jag kar bhi chehre pe chamak!",
-                "color":
-                0x6F4E37,  # Coffee brown
-                "title":
-                "Bhabhi ka Special ☕",
+                "color": 0x6F4E37,  # Coffee brown
+                "title": "Bhabhi ka Special ☕",
                 "gif":
                 "https://media.giphy.com/media/3o7TKUM3IgJBX2as9O/giphy.gif"  # Coffee coding
             }
@@ -213,7 +216,8 @@ async def motivate(interaction: discord.Interaction,
                               timestamp=datetime.datetime.utcnow())
 
         # Set thumbnail to the mentioned user's profile photo
-        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.default_avatar.url)
+        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.
+                            default_avatar.url)
 
         # Set the GIF for the embed
         embed.set_image(url=motivation["gif"])
@@ -221,11 +225,10 @@ async def motivate(interaction: discord.Interaction,
         # Set footer with family message
         embed.set_footer(
             text="Parivaar hamesha aapke saath ❤️",
-            icon_url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url
-        )
+            icon_url=interaction.user.avatar.url if interaction.user.avatar
+            else interaction.user.default_avatar.url)
 
         await interaction.response.send_message(embed=embed)
-
 
 
 @bot.tree.command(name="leaderboard",
@@ -237,8 +240,7 @@ async def leaderboard(interaction: discord.Interaction):
                               reverse=True)[:10]
 
         embed = create_embed("🏆 Coding Leaderboard 🏆",
-                             "Top problem solvers in the community:",
-                             0xffd700)
+                             "Top problem solvers in the community:", 0xffd700)
 
         for rank, (user_id, stats) in enumerate(sorted_users, 1):
             user = await bot.fetch_user(int(user_id))
@@ -271,14 +273,14 @@ async def stats(interaction: discord.Interaction,
 
         embed = create_embed(f"📊 {target.display_name}'s Coding Stats",
                              color=0x7289da)
-        embed.set_thumbnail(url=target.avatar.url if target.avatar else target.default_avatar.url)
+        embed.set_thumbnail(url=target.avatar.url if target.avatar else target.
+                            default_avatar.url)
         embed.add_field(name="Problems Solved",
                         value=f"```{data[user_id]['problems_solved']}```",
                         inline=True)
-        embed.add_field(
-            name="Leaderboard Rank",
-            value=f"```{data[user_id]['rank']}```",
-            inline=True)
+        embed.add_field(name="Leaderboard Rank",
+                        value=f"```{data[user_id]['rank']}```",
+                        inline=True)
         embed.add_field(
             name="Last Active",
             value=
