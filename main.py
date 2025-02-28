@@ -69,29 +69,29 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
     auto_roast.start()
 
-    @bot.event
-    async def on_message(message):
-        if message.author == bot.user:
-            return
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
 
-        user_id = str(message.author.id)
+    user_id = str(message.author.id)
 
-        # Ensure user is in data.json
-        if user_id not in data:
-            data[user_id] = {"problems_solved": 0, "last_active": "Never"}
+    # Ensure user is in data.json
+    if user_id not in data:
+        data[user_id] = {"problems_solved": 0, "last_active": "Never"}
 
-        # Check if message contains a code block
-        if re.search(r"```(.|\n)*```", message.content):
-            data[user_id]["problems_solved"] += 1
-            data[user_id]["last_active"] = str(message.created_at)
-            save_data(data)  # Save updated data to file
+    # Check if message contains a code block
+    if re.search(r"```(.|\n)*```", message.content):
+        data[user_id]["problems_solved"] += 1
+        data[user_id]["last_active"] = datetime.datetime.utcnow().isoformat()
+        save_data(data)  # Save updated data to file
 
-            if message.author.id == OWNER_ID:
-                await message.reply("Chai peene aa jaiye bhot coding ho gyi ☕")
-            else:
-                await message.reply("Badiya hai Devar ji! 👌")
+        if message.author.id == OWNER_ID:
+            await message.reply("Chai peene aa jaiye bhot coding ho gyi ☕")
+        else:
+            await message.reply("Badiya hai Devar ji! 👌")
 
-        await bot.process_commands(message)
+    await bot.process_commands(message)
 
 
 @tasks.loop(hours=24)
