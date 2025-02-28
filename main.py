@@ -147,11 +147,6 @@ async def motivate(interaction: discord.Interaction, member: discord.Member):
 
 
 
-
-
-
-
-
 @bot.tree.command(name="leaderboard",
                   description="Shows the coding leaderboard")
 async def leaderboard(interaction: discord.Interaction):
