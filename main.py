@@ -97,20 +97,31 @@ async def on_ready():
 @tasks.loop(hours=24)
 async def auto_roast():
     """Checks inactive users and roasts them."""
-    current_time = asyncio.get_event_loop().time()
+    current_time = datetime.datetime.utcnow()
+
     for guild in bot.guilds:
         for member in guild.members:
             if member.bot:
                 continue
-            last_time = last_activity.get(member.id, 0)
-            if current_time - last_time > 86400:  # 24 hours
+
+            user_id = str(member.id)
+            last_active_str = data.get(user_id, {}).get("last_active", "Never")
+
+            if last_active_str == "Never":
+                last_active = None
+            else:
+                last_active = datetime.datetime.fromisoformat(last_active_str.split("+")[0])
+
+            if last_active and (current_time - last_active).total_seconds() > 86400:  # 24 hours
                 channel = guild.system_channel or next(
-                    (ch for ch in guild.text_channels
-                     if ch.permissions_for(guild.me).send_messages), None)
+                    (ch for ch in guild.text_channels if ch.permissions_for(guild.me).send_messages),
+                    None
+                )
                 if channel:
                     await channel.send(
                         f"{member.mention} Arre bhai, coding bhool gaye kya? Ya sirf Discord me timepass chal raha hai? 😏🔥"
                     )
+
 
 
 @bot.tree.command(name="send", description="Send a message to a channel")
