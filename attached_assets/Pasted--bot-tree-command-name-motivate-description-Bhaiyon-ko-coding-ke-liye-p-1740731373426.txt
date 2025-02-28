@@ -1,0 +1,83 @@
+
+    @bot.tree.command(
+        name="motivate",
+        description="Bhaiyon ko coding ke liye protsaahit karein")
+    async def motivate(interaction: discord.Interaction,
+                       member: discord.Member):
+        async with interaction.channel.typing():
+            motivations = [
+                {
+                    "message":
+                    f"{member.mention} beta, tumse na ho payega? Kabhi nahi! 💪\nAage badho, hum tumpe vishwas rakhte hain!",
+                    "color":
+                    0xFFD700,  # Gold
+                    "title":
+                    "Maa ka Ashirwaad 👐",
+                    "gif":
+                    "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmR1amdjaG12NGhrdnJkaGNmcmYyd2lvOWhmazl0aGVyOHVzeXF6dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/o75ajIFH0QnQC3nCeD/giphy.gif"  # Mother blessing
+                },
+                {
+                    "message":
+                    f"{member.mention} bhai, keyboard toh jal raha hai tumhare haathon se! 🔥\nChhote bhaiyon ko seekhane ka time aa gaya!",
+                    "color":
+                    0xFF4500,  # OrangeRed
+                    "title":
+                    "Bhabhi ki Taakat 💻",
+                    "gif":
+                    "https://media.giphy.com/media/LmNwrBhejkK9EFP504/giphy.gif"  # Fiery typing
+                },
+                {
+                    "message":
+                    f"{member.mention} ka to X-FACTOR dikh gaya! 🧠\nAb ghar ka genius kaun kehta hai?",
+                    "color":
+                    0x00FF00,  # Lime
+                    "title":
+                    "Family Genius 🤓",
+                    "gif":
+                    "https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif"  # Brain sparkles
+                },
+                {
+                    "message":
+                    f"{member.mention} ne bugs ko mara jhatka! 🐛⚡\nAb ye kehne ka time hai - 'Maa kasam code perfect hai!'",
+                    "color":
+                    0x8A2BE2,  # BlueViolet
+                    "title":
+                    "Debugging Champion 🏆",
+                    "gif":
+                    "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ3Frem0waGw3eW1zamF6MjJweWJpeXNzZTAwY3Q0cTZxdHplYmNkYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/oYQRuoYd6btVNAh75z/giphy.gif"  # Bug squashing
+                },
+                {
+                    "message":
+                    f"{member.mention} coffee piyo, code likho ☕\nRaat bhar jag kar bhi chehre pe chamak!",
+                    "color":
+                    0x6F4E37,  # Coffee brown
+                    "title":
+                    "Bhabhi ka Special ☕",
+                    "gif":
+                    "https://media.giphy.com/media/3o7TKUM3IgJBX2as9O/giphy.gif"  # Coffee coding
+                }
+            ]
+
+            # Select random motivation
+            motivation = random.choice(motivations)
+
+            # Create personalized embed
+            embed = discord.Embed(title=motivation["title"],
+                                  description=motivation["message"],
+                                  color=motivation["color"],
+                                  timestamp=datetime.datetime.utcnow())
+
+            # Set thumbnail to the mentioned user's profile photo
+            embed.set_thumbnail(url=member.avatar.url)
+
+            # Set the GIF for the embed
+            embed.set_image(url=motivation["gif"])
+
+            # Set footer with family message
+            embed.set_footer(
+                text="Parivaar hamesha aapke saath ❤️",
+                icon_url=interaction.user.avatar.
+                url  # Use the command user's avatar as footer icon
+            )
+
+            await interaction.response.send_message(embed=embed)
