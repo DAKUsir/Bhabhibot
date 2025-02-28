@@ -125,7 +125,7 @@ async def auto_roast():
                 if channel:
                     try:
                         await channel.send(
-                            f"{member.mention} Arre bhai, coding bhool gaye kya? Ya sirf Discord me timepass chal raha hai? 😏🔥"
+                            f"{member.mention} Arre beta, coding bhool gaye kya? Ya sirf Discord me timepass chal raha hai? 😏🔥"
                         )
                     except discord.Forbidden:
                         print(
