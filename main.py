@@ -82,7 +82,7 @@ async def on_message(message):
         save_data(data)
 
         if message.author.id == OWNER_ID:
-            await message.reply("Great job, darling! 💖")
+            await message.reply("Great job! 💖")
         else:
             await message.reply("Great job! 😊")
 
